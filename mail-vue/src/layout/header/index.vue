@@ -88,6 +88,7 @@ import {useSettingStore} from "@/store/setting.js";
 import { hasPerm } from "@/perm/perm.js"
 import {useI18n} from "vue-i18n";
 import {copyText} from "@/utils/clipboard-utils.js";
+import { setExtend } from "@/utils/day.js"
 
 const { t } = useI18n();
 const route = useRoute();
@@ -168,6 +169,7 @@ async function copyEmail(email) {
 }
 
 function changeLang(lang) {
+  setExtend(lang === 'en' ? 'en' : 'zh-cn')
   settingStore.lang = lang
 }
 

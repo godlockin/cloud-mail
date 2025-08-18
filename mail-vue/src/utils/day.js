@@ -79,3 +79,7 @@ export function tzDayjs(time) {
 export function toUtc(time) {
     return dayjs(time).utc()
 }
+
+export function setExtend(lang) {
+    dayjs.locale(lang)
+}

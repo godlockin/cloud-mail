@@ -17,6 +17,7 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item @click="changeLang('zh')">简体中文</el-dropdown-item>
+            <el-dropdown-item @click="changeLang('zhTW')">繁體中文</el-dropdown-item>
             <el-dropdown-item @click="changeLang('en')">English</el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -203,6 +204,7 @@ function formatName(email) {
 .breadcrumb-item {
   font-weight: bold;
   font-size: 14px;
+  color: var(--el-text-color-primary);
   white-space: nowrap;
 }
 
@@ -323,7 +325,7 @@ function formatName(email) {
     .writer-text {
       margin-left: 15px;
       font-size: 14px;
-      font-weight: bold;
+      font-weight: bold;;
     }
   }
 }

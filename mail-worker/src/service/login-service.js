@@ -68,7 +68,7 @@ const loginService = {
 			regKeyId = result?.regKeyId
 		}
 
-		const accountRow = await accountService.selectByEmailIncludeDelNoCase(c, email);
+		const accountRow = await accountService.selectByEmailIncludeDel(c, email);
 
 		if (accountRow && accountRow.isDel === isDel.DELETE) {
 			throw new BizError(t('isDelUser'));
@@ -119,9 +119,9 @@ const loginService = {
 
 		const userId = await userService.insert(c, { email, regKeyId,password: hash, salt, type: type || defType });
 
-		await userService.updateUserInfo(c, userId, true);
-
 		await accountService.insert(c, { userId: userId, email, name: emailUtils.getName(email) });
+
+		await userService.updateUserInfo(c, userId, true);
 
 		if (regKey !== settingConst.regKey.CLOSE && type) {
 			await regKeyService.reduceCount(c, code, 1);
@@ -133,6 +133,10 @@ const loginService = {
 		}
 
 		return {regVerifyOpen}
+
+	},
+
+	async registerVerify() {
 
 	},
 

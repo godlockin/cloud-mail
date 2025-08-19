@@ -30,21 +30,6 @@
         </div>
       </div>
     </div>
-    <div class="container lang">
-      <div class="title">{{$t('language')}}</div>
-      <div>
-          <el-select v-model="lang" placeholder="Select" style="width: 100px">
-          <el-option
-              key="zh"
-              label="简体中文"
-              value="zh"/>
-          <el-option
-              key="en"
-              label="English"
-              value="en"/>
-        </el-select>
-      </div>
-    </div>
     <div class="del-email" v-perm="'my:delete'">
       <div class="title">{{$t('deleteUser')}}</div>
       <div style="color: #585d69;">
@@ -56,39 +41,31 @@
     </div>
     <el-dialog v-model="pwdShow" :title="$t('changePassword')" width="340">
       <div class="update-pwd">
-        <el-input type="password" :placeholder="$t('newPassword')" v-model="form.password"/>
-        <el-input type="password" :placeholder="$t('confirmPassword')" v-model="form.newPwd"/>
+        <el-input type="password" :placeholder="$t('newPassword')" v-model="form.password" autocomplete="off"/>
+        <el-input type="password" :placeholder="$t('confirmPassword')" v-model="form.newPwd" autocomplete="off"/>
         <el-button type="primary" :loading="setPwdLoading" @click="submitPwd">{{$t('save')}}</el-button>
       </div>
     </el-dialog>
   </div>
 </template>
 <script setup>
-import {reactive, ref, defineOptions, watch} from 'vue'
+import {reactive, ref, defineOptions} from 'vue'
 import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
-import { storeToRefs } from 'pinia'
 import {accountSetName} from "@/request/account.js";
 import {useAccountStore} from "@/store/account.js";
 import {useI18n} from "vue-i18n";
-import {useSettingStore} from "@/store/setting.js";
 
 const { t } = useI18n()
-const settingStore = useSettingStore()
 const accountStore = useAccountStore()
 const userStore = useUserStore();
 const setPwdLoading = ref(false)
 const setNameShow = ref(false)
 const accountName = ref(null)
-const { lang } = storeToRefs(settingStore)
 
 defineOptions({
   name: 'setting'
-})
-
-watch(() => lang.value,() => {
-  window.location.reload()
 })
 
 function showSetName() {
@@ -118,7 +95,7 @@ function setName() {
 
   accountSetName(userStore.user.accountId,name).then(() => {
     ElMessage({
-      message: t('changSuccessMsg'),
+      message: t('saveSuccessMsg'),
       type: 'success',
       plain: true,
     })
@@ -187,7 +164,7 @@ function submitPwd() {
   setPwdLoading.value = true
   resetPassword(form.password).then(() => {
     ElMessage({
-      message: t('changSuccessMsg'),
+      message: t('saveSuccessMsg'),
       type: 'success',
       plain: true,
     })
@@ -218,7 +195,7 @@ function submitPwd() {
 
   .title {
     font-size: 18px;
-    font-weight: bold;
+    font-weight: bold;;
   }
 
   .container {
@@ -229,8 +206,8 @@ function submitPwd() {
 
     .item {
       display: grid;
-      grid-template-columns: 50px 1fr;
-      gap: 140px;
+      grid-template-columns: 70px 1fr;
+      gap: 120px;
       position: relative;
       .user-name {
         display: grid;

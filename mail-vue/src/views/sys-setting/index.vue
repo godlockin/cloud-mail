@@ -17,6 +17,13 @@
                              v-model="setting.register"/>
                 </div>
               </div>
+                <div class="setting-item">
+                    <div><span>{{$t('loginDomain')}}</span></div>
+                    <div>
+                        <el-switch @change="change" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+                                   v-model="setting.loginDomain"/>
+                    </div>
+                </div>
               <div class="setting-item">
                 <div><span>{{$t('regKey')}}</span></div>
                 <div>
@@ -124,7 +131,7 @@
             <div class="card-title">{{$t('emailSetting')}}</div>
             <div class="card-content">
               <div class="setting-item">
-                <div><span>{{$t('receiveEmails')}}</span></div>
+                <div><span>{{$t('receiveEmail')}}</span></div>
                 <div>
                   <el-switch @change="change" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                              v-model="setting.receive"/>
@@ -158,6 +165,18 @@
                 <div>
                   <el-switch @change="change" :before-change="beforeChange" :active-value="0" :inactive-value="1"
                              v-model="setting.send"/>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div>
+                  <span>{{$t('noRecipientTitle')}}</span>
+                  <el-tooltip effect="dark" :content="$t('noRecipientDesc')">
+                    <Icon class="warning" icon="fe:warning" width="18" height="18"/>
+                  </el-tooltip>
+                </div>
+                <div>
+                  <el-switch @change="change" :before-change="beforeChange" :active-value="0" :inactive-value="1"
+                             v-model="setting.noRecipient"/>
                 </div>
               </div>
               <div class="setting-item">
@@ -286,12 +305,35 @@
             </div>
           </div>
 
+          <div class="settings-card">
+            <div class="card-title">{{$t('noticeTitle')}}</div>
+            <div class="card-content">
+              <div class="setting-item">
+                <div><span>{{$t('noticePopup')}}</span></div>
+                <div class="forward">
+                  <span>{{ setting.notice === 0 ? $t('enabled') : $t('disabled') }}</span>
+                  <el-button class="opt-button" size="small" type="primary" @click="openNoticePopupSetting">
+                    <Icon icon="fluent:settings-48-regular" width="18" height="18"/>
+                  </el-button>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div><span>{{$t('popUp')}}</span></div>
+                <div class="forward">
+                  <el-button class="opt-button" size="small" type="primary" @click="openNoticePopup">
+                    <Icon icon="mynaui:click-solid" width="18" height="18"/>
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="settings-card about">
             <div class="card-title">{{$t('about')}}</div>
             <div class="card-content">
               <div class="concerning-item">
                 <span>{{$t('version')}} :</span>
-                <span>v1.5.0</span>
+                <span>v1.7.0</span>
               </div>
               <div class="concerning-item">
                 <span>{{$t('community')}} : </span>
@@ -310,20 +352,29 @@
               </div>
               <div class="concerning-item">
                 <span>{{$t('support')}} : </span>
-                <el-button @click="jump('https://support.skymail.ink')" >
+                <el-button @click="jump('https://doc.skymail.ink/support.html')" >
                   {{t('supportDesc')}}
                   <template #icon>
                     <Icon color="#79D6B5" icon="simple-icons:buymeacoffee" width="20" height="20" />
                   </template>
                 </el-button>
               </div>
+                <div class="concerning-item">
+                    <span>{{$t('help')}} : </span>
+                    <el-button @click="jump('https://doc.skymail.ink')" >
+                        {{t('document')}}
+                        <template #icon>
+                            <Icon color="#79D6B5" icon="fluent-color:document-32" width="18" height="18" />
+                        </template>
+                    </el-button>
+                </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Dialogs remain the same -->
-      <el-dialog v-model="editTitleShow" :title="$t('changeTitle')" width="340" >
+      <el-dialog v-model="editTitleShow" :title="$t('changeTitle')" width="340" @closed="editTitle = setting.title">
         <form>
           <el-input type="text" :placeholder="$t('websiteTitle')" v-model="editTitle"/>
           <el-button type="primary" :loading="settingLoading" @click="saveTitle">{{$t('save')}}</el-button>
@@ -474,18 +525,89 @@
           <el-table-column :width="tokenColumnWidth" property="value" label="Token" fixed="right" :show-overflow-tooltip="true" />
         </el-table>
       </el-dialog>
-      <el-dialog v-model="showRegVerifyCount" :title="$t('rulesVerifyTitle',{count: regVerifyCount})"  @closed="regVerifyCount = setting.regVerifyCount" >
+      <el-dialog v-model="regVerifyCountShow" :title="$t('rulesVerifyTitle',{count: regVerifyCount})"  @closed="regVerifyCount = setting.regVerifyCount" >
         <form>
           <el-input-number type="text" v-model="regVerifyCount" :min="1" >
           </el-input-number>
           <el-button type="primary" :loading="settingLoading" @click="saveRegVerifyCount">{{$t('save')}}</el-button>
         </form>
       </el-dialog>
-      <el-dialog v-model="showAddVerifyCount" :title="$t('rulesVerifyTitle',{count: addVerifyCount})" @closed="addVerifyCount = setting.addVerifyCount">
+      <el-dialog v-model="addVerifyCountShow" :title="$t('rulesVerifyTitle',{count: addVerifyCount})" @closed="addVerifyCount = setting.addVerifyCount">
         <form>
           <el-input-number type="text" v-model="addVerifyCount" :min="1"/>
           <el-button type="primary" :loading="settingLoading" @click="saveAddVerifyCount">{{$t('save')}}</el-button>
         </form>
+      </el-dialog>
+      <el-dialog top="5vh" v-model="noticePopupShow" :title="$t('noticePopup')" class="notice-popup" @closed="resetNoticeForm">
+        <form>
+          <el-input v-model="noticeForm.noticeTitle" :placeholder="t('titleDesc')" />
+          <div class="notice-line-item" >
+            <el-select v-model="noticeForm.noticeType" >
+              <template #prefix>
+                <span style="margin-right: 10px">{{$t('icon')}}</span>
+              </template>
+              <el-option key="none" label="None" value="none" />
+              <el-option key="primary" label="Primary" value="primary" />
+              <el-option key="success" label="Success" value="success" />
+              <el-option key="warning" label="Warning" value="warning" />
+              <el-option key="info" label="Info" value="info" />
+            </el-select>
+            <el-select v-model="noticeForm.noticePosition" >
+              <template #prefix>
+                <span style="margin-right: 10px">{{$t('position')}}</span>
+              </template>
+              <el-option key="top-left" :label="t('topLeft')" value="top-left" />
+              <el-option key="top-right" :label="t('topRight')" value="top-right" />
+              <el-option key="bottom-left" :label="t('bottomLeft')" value="bottom-left" />
+              <el-option key="bottom-right" :label="t('bottomRight')" value="bottom-right" />
+            </el-select>
+            <el-input-number v-model="noticeForm.noticeWidth" >
+              <template #prefix >
+                {{$t('width')}}
+              </template>
+              <template #suffix >
+                px
+              </template>
+            </el-input-number>
+            <el-input-number v-model="noticeForm.noticeOffset" >
+              <template #prefix >
+                {{$t('offset')}}
+              </template>
+              <template #suffix >
+                px
+              </template>
+            </el-input-number>
+            <el-input-number v-model="noticeForm.noticeDuration" >
+              <template #prefix >
+                {{$t('duration')}}
+              </template>
+              <template #suffix >
+                ms
+              </template>
+            </el-input-number>
+          </div>
+          <div class="notice-popup-item">
+            <el-input
+                v-model="noticeForm.noticeContent"
+                :autosize="{ minRows: 15, maxRows: 25 }"
+                type="textarea"
+                :placeholder="t('noticeContentDesc')"
+            />
+          </div>
+        </form>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-switch v-model="noticeForm.notice" :active-value="0" :inactive-value="1" :active-text="$t('enable')" :inactive-text="$t('disable')" />
+            <div>
+              <el-button @click="previewNoticePopup">
+                {{$t('preview')}}
+              </el-button>
+              <el-button :loading="settingLoading" type="primary" @click="saveNoticePopup">
+                {{$t('save')}}
+              </el-button>
+            </div>
+          </div>
+        </template>
       </el-dialog>
     </el-scrollbar>
   </div>
@@ -495,6 +617,7 @@
 import {computed, defineOptions, reactive, ref} from "vue";
 import {physicsDeleteAll, setBackground, settingQuery, settingSet} from "@/request/setting.js";
 import {useSettingStore} from "@/store/setting.js";
+import {useUiStore} from "@/store/ui.js";
 import {useUserStore} from "@/store/user.js";
 import {useAccountStore} from "@/store/account.js";
 import {Icon} from "@iconify/vue";
@@ -522,10 +645,12 @@ const resendTokenFormShow = ref(false)
 const r2DomainShow = ref(false)
 const turnstileShow = ref(false)
 const tgSettingShow = ref(false)
+const noticePopupShow = ref(false)
 const thirdEmailShow = ref(false)
 const forwardRulesShow = ref(false)
 const showResendList = ref(false)
 const settingStore = useSettingStore();
+const uiStore = useUiStore();
 const {settings: setting} = storeToRefs(settingStore);
 const editTitle = ref('')
 const settingLoading = ref(false)
@@ -537,8 +662,8 @@ const showSetBackground = ref(false)
 let regVerifyCount = ref(1)
 let addVerifyCount = ref(1)
 let backup = '{}'
-const showAddVerifyCount = ref(false)
-const showRegVerifyCount = ref(false)
+const addVerifyCountShow = ref(false)
+const regVerifyCountShow = ref(false)
 const resendTokenForm = reactive({
   domain: '',
   token: '',
@@ -548,13 +673,24 @@ const turnstileForm = reactive({
   secretKey: ''
 })
 
-const regKeyOptions = [
+const noticeForm = reactive({
+  noticeTitle: '',
+  noticeContent: '',
+  noticeType: '',
+  noticeDuration: '',
+  noticePosition: '',
+  noticeOffset: 0,
+  notice: 0,
+  noticeWidth: 0
+})
+
+const regKeyOptions = computed(() => [
   {label: t('enable'), value: 0},
   {label: t('disable'), value: 1},
   {label: t('optional'), value: 2},
-]
+])
 
-const options = [
+const options = computed(() => [
   {label: t('disable'), value: 0},
   {label: '3s', value: 3},
   {label: '5s', value: 5},
@@ -562,7 +698,7 @@ const options = [
   {label: '10s', value: 10},
   {label: '15s', value: 15},
   {label: '20s', value: 20}
-]
+])
 
 const tgChatId = ref([])
 const tgBotStatus = ref(0)
@@ -574,27 +710,44 @@ const tokenColumnWidth = ref(0)
 const ruleType = ref(0)
 const ruleEmail = ref([])
 
+getSettings()
 
-settingQuery().then(settingData => {
-  setting.value = settingData
-  resendTokenForm.domain = setting.value.domainList[0]
-  loginOpacity.value = setting.value.loginOpacity
-  firstLoading.value = false
-  backgroundUrl.value = setting.value.background?.startsWith('http') ? setting.value.background : ''
-  editTitle.value = setting.value.title
-  r2DomainInput.value = setting.value.r2Domain
-  addVerifyCount.value = setting.value.addVerifyCount
-  regVerifyCount.value = setting.value.regVerifyCount
-})
+function getSettings() {
+  settingQuery().then(settingData => {
+    setting.value = settingData
+    settingStore.domainList = settingData.domainList;
+    resendTokenForm.domain = setting.value.domainList[0]
+    loginOpacity.value = setting.value.loginOpacity
+    firstLoading.value = false
+    backgroundUrl.value = setting.value.background?.startsWith('http') ? setting.value.background : ''
+    editTitle.value = setting.value.title
+    r2DomainInput.value = setting.value.r2Domain
+    addVerifyCount.value = setting.value.addVerifyCount
+    regVerifyCount.value = setting.value.regVerifyCount
+    noticeForm.notice = setting.value.notice
+    noticeForm.noticeContent = setting.value.noticeContent
+    noticeForm.noticeDuration = setting.value.noticeDuration
+    noticeForm.noticeTitle = setting.value.noticeTitle
+    noticeForm.noticePosition = setting.value.noticePosition
+    noticeForm.noticeType = setting.value.noticeType
+    noticeForm.noticeOffset = setting.value.noticeOffset
+    noticeForm.noticeWidth = setting.value.noticeWidth
+  })
+}
+
+
+function openNoticePopup() {
+  uiStore.showNotice()
+}
 
 function openAddVerifyCount() {
   if (settingLoading.value) return
-  showAddVerifyCount.value = true
+  addVerifyCountShow.value = true
 }
 
 function openRegVerifyCount() {
   if (settingLoading.value) return
-  showRegVerifyCount.value = true
+  regVerifyCountShow.value = true
 }
 
 const resendList = computed(() => {
@@ -659,8 +812,34 @@ function openTgSetting() {
   tgSettingShow.value = true
 }
 
+function openNoticePopupSetting() {
+  noticePopupShow.value = true
+}
+
 function openResendList() {
   showResendList.value = true
+}
+
+function resetNoticeForm() {
+  noticeForm.notice = setting.value.notice
+  noticeForm.noticeContent = setting.value.noticeContent
+  noticeForm.noticeDuration = setting.value.noticeDuration
+  noticeForm.noticeTitle = setting.value.noticeTitle
+  noticeForm.noticePosition = setting.value.noticePosition
+  noticeForm.noticeType = setting.value.noticeType
+  noticeForm.noticeOffset = setting.value.noticeOffset
+  noticeForm.noticeWidth = setting.value.noticeWidth
+}
+
+function saveNoticePopup() {
+  noticeForm.noticeOffset =  noticeForm.noticeOffset || 0
+  noticeForm.noticeWidth =  noticeForm.noticeWidth || 0
+  noticeForm.noticeDuration =  noticeForm.noticeDuration || 0
+  editSetting({...noticeForm})
+}
+
+function previewNoticePopup() {
+  uiStore.previewNotice({...noticeForm})
 }
 
 function openThirdEmailSetting() {
@@ -825,7 +1004,7 @@ async function saveBackground() {
     setting.value.background = key
     showSetBackground.value = false
     ElMessage({
-      message: t('changSuccessMsg'),
+      message: t('saveSuccessMsg'),
       type: "success",
       plain: true
     })
@@ -855,7 +1034,7 @@ function openCut() {
 
 function saveR2domain() {
   const settingForm = {r2Domain: r2DomainInput.value}
-  editSetting(settingForm, true)
+  editSetting(settingForm)
 }
 
 function openResendForm() {
@@ -897,13 +1076,6 @@ function change(e) {
   editSetting(settingForm, false)
 }
 
-function refresh() {
-  settingQuery().then(setting => {
-    settingStore.settings = setting;
-    settingStore.domainList = setting.domainList;
-  })
-}
-
 function saveTitle() {
   editSetting({title: editTitle.value})
 }
@@ -922,7 +1094,7 @@ function editSetting(settingForm, refreshStatus = true) {
   settingSet(settingForm).then(() => {
     settingLoading.value = false
     ElMessage({
-      message: t('changSuccessMsg'),
+      message: t('saveSuccessMsg'),
       type: "success",
       plain: true
     })
@@ -930,7 +1102,7 @@ function editSetting(settingForm, refreshStatus = true) {
       accountStore.currentAccountId = userStore.user.accountId;
     }
     if (refreshStatus) {
-      refresh()
+      getSettings()
     }
     editTitleShow.value = false
     r2DomainShow.value = false
@@ -939,8 +1111,9 @@ function editSetting(settingForm, refreshStatus = true) {
     tgSettingShow.value = false
     thirdEmailShow.value = false
     forwardRulesShow.value = false
-    showAddVerifyCount.value = false
-    showRegVerifyCount.value = false
+    addVerifyCountShow.value = false
+    regVerifyCountShow.value = false
+    noticePopupShow.value = false
   }).catch((e) => {
     loginOpacity.value = setting.value.loginOpacity
     setting.value = {...setting.value, ...JSON.parse(backup)}
@@ -993,8 +1166,8 @@ function editSetting(settingForm, refreshStatus = true) {
 }
 
 .background {
-  width: 230px;
-  height: 120px;
+  width: 250px;
+  height: 140px;
   border-radius: 4px;
   border: 1px solid #e4e7ed;
   @media (max-width: 500px) {
@@ -1021,11 +1194,7 @@ function editSetting(settingForm, refreshStatus = true) {
   overflow: hidden;
 }
 
-@media (min-width: 885px) {
-  .about {
-    height: 210px;
-  }
-}
+
 
 .card-title {
   font-size: 15px;
@@ -1045,7 +1214,7 @@ function editSetting(settingForm, refreshStatus = true) {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 10px;
-  font-weight: bold;
+  font-weight: normal;
   > div:first-child {
     display: flex;
     align-items: center;
@@ -1069,12 +1238,14 @@ function editSetting(settingForm, refreshStatus = true) {
 }
 
 .warning {
-  margin-left: 5px;
+  margin-left: 4px;
   color: gray;
   cursor: pointer;
 }
 
 .cropper {
+  border-radius: 4px;
+  border: 1px solid #D4D7DE;
   height: 397px;
   width: 705px;
   @media (max-width: 767px) {
@@ -1086,6 +1257,26 @@ function editSetting(settingForm, refreshStatus = true) {
 .dialog-footer {
   display: flex;
   justify-content: space-between;
+}
+
+.notice-popup-item {
+  margin-top: 15px;
+}
+
+.notice-line-item {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 15px;
+  > * {
+    width: 100%;
+  }
+  @media (max-width: 840px) {
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 580px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .background-url {
@@ -1106,6 +1297,16 @@ function editSetting(settingForm, refreshStatus = true) {
   min-height: 300px;
   width: 500px !important;
   @media (max-width: 540px) {
+    width: calc(100% - 40px) !important;
+    margin-right: 20px !important;
+    margin-left: 20px !important;
+  }
+}
+
+:deep(.notice-popup.el-dialog) {
+  min-height: 300px;
+  width: 820px !important;
+  @media (max-width: 860px) {
     width: calc(100% - 40px) !important;
     margin-right: 20px !important;
     margin-left: 20px !important;
@@ -1143,7 +1344,7 @@ function editSetting(settingForm, refreshStatus = true) {
       top: 1px;
       position: relative;
       font-size: 16px;
-      font-weight: bold;
+      font-weight: bold;;
     }
   }
 }
@@ -1247,17 +1448,16 @@ function editSetting(settingForm, refreshStatus = true) {
 .concerning-item {
   display: flex;
   align-items: center;
-
   :deep(.el-button) {
     padding: 0 10px;
-
+    font-weight: normal;
     i {
       font-size: 22px;
     }
   }
 
   > span:first-child {
-    font-weight: bold;
+    font-weight: normal;
     padding-right: 20px;
   }
 }

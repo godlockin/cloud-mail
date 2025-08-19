@@ -40,7 +40,7 @@ const accountService = {
 		}
 
 
-		let accountRow = await this.selectByEmailIncludeDelNoCase(c, email);
+		let accountRow = await this.selectByEmailIncludeDel(c, email);
 
 		if (accountRow && accountRow.isDel === isDel.DELETE) {
 			throw new BizError(t('isDelAccount'));
@@ -92,23 +92,8 @@ const accountService = {
 		return accountRow;
 	},
 
-	selectByEmailIncludeDelNoCase(c, email) {
-		return orm(c)
-			.select()
-			.from(account)
-			.where(sql`${account.email} COLLATE NOCASE = ${email}`)
-			.get();
-	},
 	selectByEmailIncludeDel(c, email) {
-		return orm(c).select().from(account).where(eq(account.email, email)).get();
-	},
-
-	selectByEmail(c, email) {
-		return orm(c).select().from(account).where(
-			and(
-				eq(account.email, email),
-				eq(account.isDel, isDel.NORMAL)))
-			.get();
+		return orm(c).select().from(account).where(sql`${account.email} COLLATE NOCASE = ${email}`).get();
 	},
 
 	list(c, params, userId) {
@@ -165,6 +150,10 @@ const accountService = {
 
 	async insert(c, params) {
 		await orm(c).insert(account).values({ ...params }).returning();
+	},
+
+	async insertList(c, list) {
+		await orm(c).insert(account).values(list).run();
 	},
 
 	async physicsDeleteAll(c) {

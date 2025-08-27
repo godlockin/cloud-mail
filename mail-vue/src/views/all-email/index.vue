@@ -34,7 +34,7 @@
                 <el-option key="1" :label="$t('user')" :value="'user'"/>
                 <el-option key="2" :label="$t('selectEmail')" :value="'account'"/>
               </el-select>
-              <div style="color: #333;display: flex;">
+              <div class="search-type">
                 <span>{{ selectTitle }}</span>
                 <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
               </div>
@@ -194,14 +194,19 @@ function getEmailList(emailId, size) {
   pointer-events: none;
 }
 
+.search-type {
+  display: flex;
+  color: var(--el-text-color-regular);
+}
+
 :deep(.header-actions) {
   padding-top: 8px;
   padding-bottom: 8px;
 }
 
 .search-input {
-
-  width: min(280px,calc(100vw - 140px));
+  width: 100%;
+  max-width: 280px;
   height: 28px;
   .setting-icon {
     position: relative;

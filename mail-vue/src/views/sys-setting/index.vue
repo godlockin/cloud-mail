@@ -1551,14 +1551,11 @@ function editSetting(settingForm, refreshStatus = true) {
 }
 
 .card-grid {
-
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 20px;
   gap: 20px;
-  @media (max-width: 500px) {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  }
   @media (max-width: 1023px) {
     gap: 15px;
     padding: 15px;
@@ -1588,17 +1585,19 @@ function editSetting(settingForm, refreshStatus = true) {
 
 .settings-card {
   background-color: var(--el-bg-color);
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid var(--el-border-color);
   transition: all 300ms;
   overflow: hidden;
+  max-width: 900px;
+  width: 100%;
 }
 
 
 .card-title {
   font-size: 15px;
   font-weight: bold;
-  padding: 10px 20px;
+  padding: 15px 20px 12px;
   border-bottom: 1px solid var(--el-border-color);
 }
 

@@ -274,6 +274,7 @@ const zh = {
     rulesVerify: '规则',
     rulesVerifyTitle: 'IP 每天使用 {count} 次后触发',
     botVerifyMsg: '请完成人机验证',
+    oauthLogin: 'OAuth2',
     noticeTitle: '网站公告',
     noticePopup: '登录弹窗',
     icon: '图标',
@@ -339,6 +340,10 @@ const zh = {
     searchEmail: '搜索邮箱',
     searchSender: '搜索发件人',
     userEmail: '用户邮箱',
+    oauthSetting: 'OAuth',
+    clientId: '客户端 ID',
+    clientSecret: '客户端密钥',
+    callbackBase: 'https://domain',
     notOwner: '基础邮箱不属于您',
 }
 export default zh

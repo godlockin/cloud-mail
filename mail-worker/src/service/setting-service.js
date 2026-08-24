@@ -48,18 +48,7 @@ const settingService = {
 		domainList = domainList.map(item => '@' + item);
 		setting.domainList = domainList;
 
-
-		let linuxdoSwitch = c.env.linuxdo_switch;
 		let projectLink = c.env.project_link;
-
-		if (typeof linuxdoSwitch === 'string' && linuxdoSwitch === 'true') {
-			linuxdoSwitch = true
-		} else if (linuxdoSwitch === true) {
-			linuxdoSwitch = true
-		} else {
-			linuxdoSwitch = false
-		}
-
 		if (typeof projectLink === 'string' && projectLink === 'false') {
 			projectLink = false
 		} else if (projectLink === false) {
@@ -70,9 +59,10 @@ const settingService = {
 
 		setting.projectLink = projectLink;
 
-		setting.linuxdoClientId = c.env.linuxdo_client_id;
-		setting.linuxdoCallbackUrl = c.env.linuxdo_callback_url;
-		setting.linuxdoSwitch = linuxdoSwitch;
+		setting.linuxdoSwitch = this.parseBoolean(c.env.linuxdo_switch);
+		setting.githubSwitch = this.parseBoolean(c.env.github_switch);
+		setting.gitlabSwitch = this.parseBoolean(c.env.gitlab_switch);
+		setting.googleSwitch = this.parseBoolean(c.env.google_switch);
 
 		setting.emailPrefixFilter = setting.emailPrefixFilter.split(",").filter(Boolean);
 
@@ -140,6 +130,16 @@ const settingService = {
 		}
 
 		params.resendTokens = JSON.stringify(resendTokens);
+
+		const callbackPlatforms = ['linuxdo', 'github', 'gitlab', 'google'];
+		for (const platform of callbackPlatforms) {
+			const key = platform + 'CallbackUrl';
+			const expectedSuffix = '/login/' + platform;
+			if (params[key] && !params[key].endsWith(expectedSuffix)) {
+				throw new BizError(`Invalid callback URL for ${platform}: must end with ${expectedSuffix}`);
+			}
+		}
+
 		await orm(c).update(setting).set({ ...params }).returning().get();
 		await this.refresh(c);
 	},
@@ -231,9 +231,24 @@ const settingService = {
 			linuxdoClientId: settingRow.linuxdoClientId,
 			linuxdoCallbackUrl: settingRow.linuxdoCallbackUrl,
 			linuxdoSwitch: settingRow.linuxdoSwitch,
+			githubClientId: settingRow.githubClientId,
+			githubCallbackUrl: settingRow.githubCallbackUrl,
+			githubSwitch: settingRow.githubSwitch,
+			gitlabClientId: settingRow.gitlabClientId,
+			gitlabCallbackUrl: settingRow.gitlabCallbackUrl,
+			gitlabSwitch: settingRow.gitlabSwitch,
+			googleClientId: settingRow.googleClientId,
+			googleCallbackUrl: settingRow.googleCallbackUrl,
+			googleSwitch: settingRow.googleSwitch,
 			minEmailPrefix: settingRow.minEmailPrefix,
 			projectLink: settingRow.projectLink
 		};
+	},
+
+	parseBoolean(value) {
+		if (typeof value === 'string' && value === 'true') return true;
+		if (value === true) return true;
+		return false;
 	},
 
 };

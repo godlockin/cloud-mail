@@ -5,6 +5,7 @@ import { eq, inArray } from 'drizzle-orm';
 import userService from "./user-service";
 import loginService from "./login-service";
 import cryptoUtils from "../utils/crypto-utils";
+import settingService from "./setting-service";
 
 const oauthService = {
 
@@ -34,14 +35,13 @@ const oauthService = {
 
 		const { code } = params;
 
-		let token = '';
-		let userInfo = {}
+		const setting = await settingService.query(c);
 
 		const reqParams = new URLSearchParams()
-		reqParams.append('client_id', c.env.linuxdo_client_id)
-		reqParams.append('client_secret', c.env.linuxdo_client_secret)
+		reqParams.append('client_id', setting.linuxdoClientId)
+		reqParams.append('client_secret', setting.linuxdoClientSecret)
 		reqParams.append('code', code)
-		reqParams.append('redirect_uri', c.env.linuxdo_callback_url)
+		reqParams.append('redirect_uri', setting.linuxdoCallbackUrl)
 		reqParams.append('grant_type', 'authorization_code')
 
 		const tokenRes = await fetch("https://connect.linux.do/oauth2/token", {
@@ -54,7 +54,7 @@ const oauthService = {
 			throw new BizError(tokenRes.statusText)
 		}
 
-		token = await tokenRes.json()
+		const token = await tokenRes.json()
 
 		const userRes = await fetch('https://connect.linux.do/api/user', {
 			headers: {
@@ -66,23 +66,172 @@ const oauthService = {
 			throw new BizError(userRes.statusText)
 		}
 
-		userInfo = await userRes.json();
+		const userInfo = await userRes.json();
 
 		userInfo.oauthUserId = String(userInfo.id);
 		userInfo.active = userInfo.active ? 0 : 1;
 		userInfo.silenced = userInfo.silenced ? 0 : 1;
 		userInfo.trustLevel = userInfo.trust_level;
 		userInfo.avatar = userInfo.avatar_url;
+		userInfo.platform = 'linuxdo';
 
-		const  oauthRow = await this.saveUser(c, userInfo);
+		return await this.saveAndLogin(c, userInfo)
+	},
+
+	async githubLogin(c, params) {
+
+		const { code } = params;
+
+		const setting = await settingService.query(c);
+
+		const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"Accept": "application/json"
+			},
+			body: JSON.stringify({
+				client_id: setting.githubClientId,
+				client_secret: setting.githubClientSecret,
+				code: code,
+				redirect_uri: setting.githubCallbackUrl
+			})
+		});
+
+		if (!tokenRes.ok) {
+			throw new BizError(tokenRes.statusText);
+		}
+
+		const token = await tokenRes.json();
+
+		if (token.error) {
+			throw new BizError(token.error_description || token.error);
+		}
+
+		const userRes = await fetch('https://api.github.com/user', {
+			headers: {
+				Authorization: 'Bearer ' + token.access_token,
+				'User-Agent': 'cloud-mail'
+			}
+		});
+
+		if (!userRes.ok) {
+			throw new BizError(userRes.statusText);
+		}
+
+		const userInfo = await userRes.json();
+
+		userInfo.oauthUserId = String(userInfo.id);
+		userInfo.username = userInfo.login;
+		userInfo.avatar = userInfo.avatar_url;
+		userInfo.platform = 'github';
+
+		return await this.saveAndLogin(c, userInfo);
+	},
+
+	async gitlabLogin(c, params) {
+
+		const { code } = params;
+
+		const setting = await settingService.query(c);
+
+		const reqParams = new URLSearchParams()
+		reqParams.append('client_id', setting.gitlabClientId)
+		reqParams.append('client_secret', setting.gitlabClientSecret)
+		reqParams.append('code', code)
+		reqParams.append('redirect_uri', setting.gitlabCallbackUrl)
+		reqParams.append('grant_type', 'authorization_code')
+
+		const tokenRes = await fetch("https://gitlab.com/oauth/token", {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: reqParams.toString()
+		});
+
+		if (!tokenRes.ok) {
+			throw new BizError(tokenRes.statusText);
+		}
+
+		const token = await tokenRes.json();
+
+		const userRes = await fetch('https://gitlab.com/api/v4/user', {
+			headers: {
+				Authorization: 'Bearer ' + token.access_token
+			}
+		});
+
+		if (!userRes.ok) {
+			throw new BizError(userRes.statusText);
+		}
+
+		const userInfo = await userRes.json();
+
+		userInfo.oauthUserId = String(userInfo.id);
+		userInfo.username = userInfo.username;
+		userInfo.name = userInfo.name;
+		userInfo.avatar = userInfo.avatar_url;
+		userInfo.platform = 'gitlab';
+
+		return await this.saveAndLogin(c, userInfo);
+	},
+
+	async googleLogin(c, params) {
+
+		const { code } = params;
+
+		const setting = await settingService.query(c);
+
+		const reqParams = new URLSearchParams()
+		reqParams.append('client_id', setting.googleClientId)
+		reqParams.append('client_secret', setting.googleClientSecret)
+		reqParams.append('code', code)
+		reqParams.append('redirect_uri', setting.googleCallbackUrl)
+		reqParams.append('grant_type', 'authorization_code')
+
+		const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: reqParams.toString()
+		});
+
+		if (!tokenRes.ok) {
+			throw new BizError(tokenRes.statusText);
+		}
+
+		const token = await tokenRes.json();
+
+		const userRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+			headers: {
+				Authorization: 'Bearer ' + token.access_token
+			}
+		});
+
+		if (!userRes.ok) {
+			throw new BizError(userRes.statusText);
+		}
+
+		const userInfo = await userRes.json();
+
+		userInfo.oauthUserId = String(userInfo.sub);
+		userInfo.username = userInfo.email;
+		userInfo.name = userInfo.name;
+		userInfo.avatar = userInfo.picture;
+		userInfo.platform = 'google';
+
+		return await this.saveAndLogin(c, userInfo);
+	},
+
+	async saveAndLogin(c, userInfo) {
+
+		const oauthRow = await this.saveUser(c, userInfo);
 		const userRow = await userService.selectByIdIncludeDel(c, oauthRow.userId);
 
 		if (!userRow) {
-			return { userInfo: oauthRow, token: null }
+			return { userInfo: oauthRow, token: null };
 		}
 
 		const JwtToken = await loginService.login(c, { email: userRow.email, password: null }, true);
-		return { userInfo: oauthRow, token: JwtToken }
+		return { userInfo: oauthRow, token: JwtToken };
 	},
 
 	async saveUser(c, userInfo) {

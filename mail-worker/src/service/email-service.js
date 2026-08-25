@@ -30,7 +30,7 @@ const emailService = {
 		let { emailId, type, accountId, size, timeSort, allReceive } = params;
 
 		size = Number(size);
-		emailId = Number(emailId);
+		emailId = Number(emailId) || 0;
 		timeSort = Number(timeSort);
 		accountId = Number(accountId);
 		allReceive = Number(allReceive);
@@ -39,20 +39,13 @@ const emailService = {
 			size = 50;
 		}
 
-		if (!emailId) {
-
-			if (timeSort) {
-				emailId = 0;
-			} else {
-				emailId = 9999999999;
-			}
-
-		}
-
 		if (isNaN(allReceive)) {
 			let accountRow = await accountService.selectById(c, accountId);
 			allReceive = accountRow.allReceive;
 		}
+
+		const filters = this.emailListFilters({ userId, accountId, type, allReceive, emailId, timeSort });
+		const countFilters = this.emailListFilters({ userId, accountId, type, allReceive, withCursor: false });
 
 		const query = orm(c)
 			.select({
@@ -66,20 +59,12 @@ const emailService = {
 					eq(star.emailId, email.emailId),
 					eq(star.userId, userId)
 				)
-			).leftJoin(
+			)
+			.innerJoin(
 				account,
 				eq(account.accountId, email.accountId)
 			)
-			.where(
-				and(
-					allReceive ? eq(1,1) : eq(email.accountId, accountId),
-					eq(email.userId, userId),
-					timeSort ? gt(email.emailId, emailId) : lt(email.emailId, emailId),
-					eq(email.type, type),
-					eq(email.isDel, isDel.NORMAL),
-					eq(account.isDel, isDel.NORMAL)
-				)
-			);
+			.where(and(...filters));
 
 		if (timeSort) {
 			query.orderBy(asc(email.emailId));
@@ -90,26 +75,19 @@ const emailService = {
 		const listQuery = query.limit(size).all();
 
 		const totalQuery = orm(c).select({ total: count() }).from(email)
-			.leftJoin(
+			.innerJoin(
 				account,
 				eq(account.accountId, email.accountId)
 			)
-			.where(
-				and(
-					allReceive ? eq(1,1) : eq(email.accountId, accountId),
-					eq(email.userId, userId),
-					eq(email.type, type),
-					eq(email.isDel, isDel.NORMAL),
-					eq(account.isDel, isDel.NORMAL)
-				)
-		).get();
+			.where(and(...countFilters))
+			.get();
 
 		const latestEmailQuery = orm(c).select().from(email).where(
 			and(
-				allReceive ? eq(1,1) : eq(email.accountId, accountId),
 				eq(email.userId, userId),
 				eq(email.type, type),
-				eq(email.isDel, isDel.NORMAL)
+				eq(email.isDel, isDel.NORMAL),
+				allReceive ? undefined : eq(email.accountId, accountId)
 			))
 			.orderBy(desc(email.emailId)).limit(1).get();
 
@@ -132,6 +110,71 @@ const emailService = {
 		}
 
 		return { list, total: totalRow.total, latestEmail };
+	},
+
+	emailListFilters({ userId, accountId, type, allReceive, emailId, timeSort, withCursor = true }) {
+		const conditions = [
+			eq(email.userId, userId),
+			eq(email.type, type),
+			eq(email.isDel, isDel.NORMAL),
+			eq(account.isDel, isDel.NORMAL),
+		];
+		if (!allReceive) {
+			conditions.push(eq(email.accountId, accountId));
+		}
+		if (withCursor && emailId) {
+			conditions.push(timeSort ? gt(email.emailId, emailId) : lt(email.emailId, emailId));
+		}
+		return conditions;
+	},
+
+	allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, withCursor = true }) {
+		const conditions = [];
+
+		if (type === 'send') {
+			conditions.push(eq(email.type, emailConst.type.SEND));
+		}
+
+		if (type === 'receive') {
+			conditions.push(eq(email.type, emailConst.type.RECEIVE));
+		}
+
+		if (type === 'delete') {
+			conditions.push(eq(email.isDel, isDel.DELETE));
+		}
+
+		if (type === 'noone') {
+			conditions.push(eq(email.status, emailConst.status.NOONE));
+		}
+
+		if (userEmail) {
+			conditions.push(sql`${user.email} COLLATE NOCASE LIKE ${'%' + userEmail + '%'}`);
+		}
+
+		if (accountEmail) {
+			conditions.push(
+				or(
+					sql`${email.toEmail} COLLATE NOCASE LIKE ${'%' + accountEmail + '%'}`,
+					sql`${email.sendEmail} COLLATE NOCASE LIKE ${'%' + accountEmail + '%'}`,
+				)
+			);
+		}
+
+		if (name) {
+			conditions.push(sql`${email.name} COLLATE NOCASE LIKE ${'%' + name + '%'}`);
+		}
+
+		if (subject) {
+			conditions.push(sql`${email.subject} COLLATE NOCASE LIKE ${'%' + subject + '%'}`);
+		}
+
+		conditions.push(ne(email.status, emailConst.status.SAVING));
+
+		if (withCursor && emailId) {
+			conditions.push(timeSort ? gt(email.emailId, emailId) : lt(email.emailId, emailId));
+		}
+
+		return conditions;
 	},
 
 	async delete(c, params, userId) {
@@ -750,7 +793,7 @@ const emailService = {
 		}
 
 		let list = await orm(c).select({...email}).from(email)
-			.leftJoin(
+			.innerJoin(
 				account,
 				eq(account.accountId, email.accountId)
 			)
@@ -760,7 +803,7 @@ const emailService = {
 					eq(email.userId, userId),
 					eq(email.isDel, isDel.NORMAL),
 					eq(account.isDel, isDel.NORMAL),
-					allReceive ? eq(1,1) : eq(email.accountId, accountId),
+					allReceive ? undefined : eq(email.accountId, accountId),
 					eq(email.type, emailConst.type.RECEIVE)
 				))
 			.orderBy(desc(email.emailId))
@@ -815,81 +858,25 @@ const emailService = {
 
 		size = Number(size);
 
-		emailId = Number(emailId);
+		emailId = Number(emailId) || 0;
 		timeSort = Number(timeSort);
 
 		if (size > 50) {
 			size = 50;
 		}
 
-		if (!emailId) {
-
-			if (timeSort) {
-				emailId = 0;
-			} else {
-				emailId = 9999999999;
-			}
-
-		}
-
-		const conditions = [];
-
-		if (type === 'send') {
-			conditions.push(eq(email.type, emailConst.type.SEND));
-		}
-
-		if (type === 'receive') {
-			conditions.push(eq(email.type, emailConst.type.RECEIVE));
-		}
-
-		if (type === 'delete') {
-			conditions.push(eq(email.isDel, isDel.DELETE));
-		}
-
-		if (type === 'noone') {
-			conditions.push(eq(email.status, emailConst.status.NOONE));
-		}
-
-		if (userEmail) {
-			conditions.push(sql`${user.email} COLLATE NOCASE LIKE ${'%'+ userEmail + '%'}`);
-		}
-
-		if (accountEmail) {
-			conditions.push(
-				or(
-					sql`${email.toEmail} COLLATE NOCASE LIKE ${'%'+ accountEmail + '%'}`,
-					sql`${email.sendEmail} COLLATE NOCASE LIKE ${'%'+ accountEmail + '%'}`,
-				)
-			)
-		}
-
-		if (name) {
-			conditions.push(sql`${email.name} COLLATE NOCASE LIKE ${'%'+ name + '%'}`);
-		}
-
-		if (subject) {
-			conditions.push(sql`${email.subject} COLLATE NOCASE LIKE ${'%'+ subject + '%'}`);
-		}
-
-		conditions.push(ne(email.status, emailConst.status.SAVING));
-
-		const countConditions = [...conditions];
-
-		if (timeSort) {
-			conditions.unshift(gt(email.emailId, emailId));
-		} else {
-			conditions.unshift(lt(email.emailId, emailId));
-		}
+		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort });
+		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, withCursor: false });
 
 		const query = orm(c).select({ ...email, userEmail: user.email })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
-			.where(and(...conditions));
+			.where(and(...filters));
 
 		const queryCount = orm(c).select({ total: count() })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
-			.where(and(...countConditions));
+			.where(and(...countFilters));
 
 		if (timeSort) {
 			query.orderBy(asc(email.emailId));

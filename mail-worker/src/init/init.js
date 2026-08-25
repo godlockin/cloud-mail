@@ -31,36 +31,29 @@ const dbInit = {
 		await this.v3_0DB(c);
 		await this.v3_1DB(c);
 		await this.v3_2DB(c);
-		await this.v3_3DB(c);
 		await settingService.refresh(c);
 		return c.text('success');
 	},
 
-	async v3_3DB(c) {
-		const oauthSwitchFields = [
-			'linuxdo_switch', 'github_switch', 'google_switch',
-		];
-		for (const field of oauthSwitchFields) {
-			try {
-				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN ${field} INTEGER NOT NULL DEFAULT 1;`).run();
-			} catch (e) {
-				console.warn(`跳过字段：${e.message}`);
-			}
-		}
-	},
-
 	async v3_2DB(c) {
-		const oauthFields = [
-			'linuxdo_client_id', 'linuxdo_client_secret',
-			'github_client_id', 'github_client_secret',
-			'google_client_id', 'google_client_secret',
-		];
-		for (const field of oauthFields) {
-			try {
-				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN ${field} TEXT NOT NULL DEFAULT '';`).run();
-			} catch (e) {
-				console.warn(`跳过字段：${e.message}`);
-			}
+		try {
+			await c.env.db.batch([
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN linuxdo_client_id TEXT NOT NULL DEFAULT '';`),
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN linuxdo_client_secret TEXT NOT NULL DEFAULT '';`),
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN github_client_id TEXT NOT NULL DEFAULT '';`),
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN github_client_secret TEXT NOT NULL DEFAULT '';`),
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN google_client_id TEXT NOT NULL DEFAULT '';`),
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN google_client_secret TEXT NOT NULL DEFAULT '';`),
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN linuxdo_switch INTEGER NOT NULL DEFAULT 1;`),
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN github_switch INTEGER NOT NULL DEFAULT 1;`),
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN google_switch INTEGER NOT NULL DEFAULT 1;`),
+				await c.env.db.prepare(`CREATE INDEX IF NOT EXISTS idx_email_list_user ON email(user_id, type, is_del, email_id)`),
+				await c.env.db.prepare(`CREATE INDEX IF NOT EXISTS idx_email_list_account ON email(user_id, account_id, type, is_del, email_id)`),
+				await c.env.db.prepare(`CREATE INDEX IF NOT EXISTS idx_star_user_email ON star(user_id, email_id)`),
+				await c.env.db.prepare(`CREATE INDEX IF NOT EXISTS idx_star_email_user ON star(email_id, user_id)`)
+			]);
+		} catch (e) {
+			console.warn(`跳过字段：${e.message}`);
 		}
 	},
 

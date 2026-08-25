@@ -402,7 +402,11 @@
             <div class="card-title">{{ $t('oauthLogin') }}</div>
             <div class="card-content">
               <div class="setting-item" v-for="p in oauthPlatforms" :key="p.key">
-                <div><span>{{ p.label }}</span></div>
+                <div>
+                  <el-avatar v-if="p.iconType === 'image'" :src="p.icon" :size="22" class="oauth-icon"/>
+                  <Icon v-else :icon="p.icon" width="22" height="22" class="oauth-icon"/>
+                  <span>{{ p.label }}</span>
+                </div>
                 <div class="forward">
                   <span>{{ setting[p.key + 'Switch'] === 0 ? $t('enabled') : $t('disabled') }}</span>
                   <el-button class="opt-button" size="small" type="primary" @click="openOauthSetting(p)">
@@ -918,9 +922,9 @@ const turnstileForm = reactive({
 })
 
 const oauthPlatforms = [
-  { key: 'linuxdo', label: 'LinuxDo' },
-  { key: 'github', label: 'GitHub' },
-  { key: 'google', label: 'Google' },
+  { key: 'linuxdo', label: 'LinuxDo', icon: '/image/linuxdo.webp', iconType: 'image' },
+  { key: 'github', label: 'GitHub', icon: 'devicon:github', iconType: 'iconify' },
+  { key: 'google', label: 'Google', icon: 'devicon:google', iconType: 'iconify' },
 ]
 const oauthSettingShow = ref(false)
 const oauthForm = reactive({
@@ -1702,6 +1706,14 @@ function editSetting(settingForm, refreshStatus = true) {
     justify-items: flex-end;
     font-weight: normal;
   }
+}
+
+.oauth-icon {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px;
+  flex-shrink: 0;
+  margin-right: 2px;
 }
 
 .r2domain-item {

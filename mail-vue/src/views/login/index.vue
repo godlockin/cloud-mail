@@ -193,8 +193,8 @@ const oauthProvider = computed(() => {
 const oauthProviders = computed(() => {
   const allProviders = [
     { key: 'linuxdo', label: 'LinuxDo', icon: '/image/linuxdo.webp', iconType: 'image' },
-    { key: 'github', label: 'GitHub', icon: 'mingcute:github-fill', iconType: 'iconify' },
-    { key: 'google', label: 'Google', icon: 'mingcute:google-fill', iconType: 'iconify' },
+    { key: 'github', label: 'GitHub', icon: 'devicon:github', iconType: 'iconify' },
+    { key: 'google', label: 'Google', icon: 'devicon:google', iconType: 'iconify' },
   ]
   return allProviders.filter(p => settingStore.settings[p.key + 'Switch'] === 0)
 })

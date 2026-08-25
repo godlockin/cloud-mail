@@ -70,7 +70,7 @@
 
 - **🤖 人机验证**：集成Turnstile人机验证，防止人机批量注册
 
-- **🔑 OAuth2 登录**：支持 LinuxDo / GitHub / GitLab / Google 第三方登录
+- **🔑 OAuth2 登录**：支持 LinuxDo / GitHub / Google 第三方登录
 
 - **📜 更多功能**：正在开发中...
 

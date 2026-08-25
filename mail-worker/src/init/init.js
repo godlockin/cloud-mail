@@ -31,16 +31,29 @@ const dbInit = {
 		await this.v3_0DB(c);
 		await this.v3_1DB(c);
 		await this.v3_2DB(c);
+		await this.v3_3DB(c);
 		await settingService.refresh(c);
 		return c.text('success');
 	},
 
+	async v3_3DB(c) {
+		const oauthSwitchFields = [
+			'linuxdo_switch', 'github_switch', 'google_switch',
+		];
+		for (const field of oauthSwitchFields) {
+			try {
+				await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN ${field} INTEGER NOT NULL DEFAULT 1;`).run();
+			} catch (e) {
+				console.warn(`跳过字段：${e.message}`);
+			}
+		}
+	},
+
 	async v3_2DB(c) {
 		const oauthFields = [
-			'linuxdo_client_id', 'linuxdo_client_secret', 'linuxdo_callback_url',
-			'github_client_id', 'github_client_secret', 'github_callback_url',
-			'gitlab_client_id', 'gitlab_client_secret', 'gitlab_callback_url',
-			'google_client_id', 'google_client_secret', 'google_callback_url',
+			'linuxdo_client_id', 'linuxdo_client_secret',
+			'github_client_id', 'github_client_secret',
+			'google_client_id', 'google_client_secret',
 		];
 		for (const field of oauthFields) {
 			try {

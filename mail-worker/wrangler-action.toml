@@ -44,10 +44,5 @@ admin = "${ADMIN}"
 jwt_secret = "${JWT_SECRET}"
 project_link = "${PROJECT_LINK}"
 
-linuxdo_switch = "${LINUXDO_SWITCH}"
-github_switch = "${GITHUB_SWITCH}"
-gitlab_switch = "${GITLAB_SWITCH}"
-google_switch = "${GOOGLE_SWITCH}"
-
 [build]
 command = "pnpm --prefix ../mail-vue install && pnpm --prefix ../mail-vue run build"

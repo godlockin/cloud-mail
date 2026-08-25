@@ -343,7 +343,6 @@ const zh = {
     oauthSetting: 'OAuth',
     clientId: '客户端 ID',
     clientSecret: '客户端密钥',
-    callbackBase: 'https://domain',
     notOwner: '基础邮箱不属于您',
 }
 export default zh

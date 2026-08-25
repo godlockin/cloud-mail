@@ -12,11 +12,6 @@ app.post('/oauth/github/login', async (c) => {
 	return c.json(result.ok(loginInfo))
 });
 
-app.post('/oauth/gitlab/login', async (c) => {
-	const loginInfo = await oauthService.gitlabLogin(c, await c.req.json());
-	return c.json(result.ok(loginInfo))
-});
-
 app.post('/oauth/google/login', async (c) => {
 	const loginInfo = await oauthService.googleLogin(c, await c.req.json());
 	return c.json(result.ok(loginInfo))

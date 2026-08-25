@@ -55,15 +55,12 @@ export const setting = sqliteTable('setting', {
 	aiCodeFilter: text('ai_code_filter').default('').notNull(),
 	linuxdoClientId: text('linuxdo_client_id').default('').notNull(),
 	linuxdoClientSecret: text('linuxdo_client_secret').default('').notNull(),
-	linuxdoCallbackUrl: text('linuxdo_callback_url').default('').notNull(),
+	linuxdoSwitch: integer('linuxdo_switch').default(1).notNull(),
 	githubClientId: text('github_client_id').default('').notNull(),
 	githubClientSecret: text('github_client_secret').default('').notNull(),
-	githubCallbackUrl: text('github_callback_url').default('').notNull(),
-	gitlabClientId: text('gitlab_client_id').default('').notNull(),
-	gitlabClientSecret: text('gitlab_client_secret').default('').notNull(),
-	gitlabCallbackUrl: text('gitlab_callback_url').default('').notNull(),
+	githubSwitch: integer('github_switch').default(1).notNull(),
 	googleClientId: text('google_client_id').default('').notNull(),
 	googleClientSecret: text('google_client_secret').default('').notNull(),
-	googleCallbackUrl: text('google_callback_url').default('').notNull()
+	googleSwitch: integer('google_switch').default(1).notNull()
 });
 export default setting

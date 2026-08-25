@@ -60,26 +60,6 @@ const routes = [
         component: () => import('@/views/login/index.vue')
     },
     {
-        path: '/login/github',
-        name: 'loginGithub',
-        component: () => import('@/views/login/index.vue')
-    },
-    {
-        path: '/login/gitlab',
-        name: 'loginGitlab',
-        component: () => import('@/views/login/index.vue')
-    },
-    {
-        path: '/login/google',
-        name: 'loginGoogle',
-        component: () => import('@/views/login/index.vue')
-    },
-    {
-        path: '/login/linuxdo',
-        name: 'loginLinuxdo',
-        component: () => import('@/views/login/index.vue')
-    },
-    {
         path: '/test',
         name: 'test',
         component: () => import('@/views/test/index.vue')

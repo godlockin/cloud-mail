@@ -353,22 +353,6 @@
             </div>
           </div>
 
-          <!-- OAuth Login Card -->
-          <div class="settings-card">
-            <div class="card-title">{{ $t('oauthLogin') }}</div>
-            <div class="card-content">
-              <div class="setting-item" v-for="p in oauthPlatforms" :key="p.key">
-                <div><span>{{ p.label }}</span></div>
-                <div class="forward">
-                  <span>{{ setting[p.key + 'Switch'] ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" size="small" type="primary" :disabled="!setting[p.key + 'Switch']" @click="openOauthSetting(p)">
-                    <Icon icon="fluent:settings-48-regular" width="18" height="18"/>
-                  </el-button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div class="settings-card">
             <div class="card-title">{{ $t('noticeTitle') }}</div>
             <div class="card-content">
@@ -406,6 +390,22 @@
                 <div><span>{{ $t('codeRecognitionRules') }}</span></div>
                 <div class="forward">
                   <el-button class="opt-button" size="small" type="primary" @click="openAiCodeFilter">
+                    <Icon icon="fluent:settings-48-regular" width="18" height="18"/>
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- OAuth Login Card -->
+          <div class="settings-card">
+            <div class="card-title">{{ $t('oauthLogin') }}</div>
+            <div class="card-content">
+              <div class="setting-item" v-for="p in oauthPlatforms" :key="p.key">
+                <div><span>{{ p.label }}</span></div>
+                <div class="forward">
+                  <span>{{ setting[p.key + 'Switch'] === 0 ? $t('enabled') : $t('disabled') }}</span>
+                  <el-button class="opt-button" size="small" type="primary" @click="openOauthSetting(p)">
                     <Icon icon="fluent:settings-48-regular" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -504,17 +504,18 @@
         </form>
       </el-dialog>
       <el-dialog v-model="oauthSettingShow" :title="$t('oauthSetting') + ' - ' + oauthForm.label" width="340"
-                 @closed="oauthForm.clientId = ''; oauthForm.clientSecret = ''; oauthForm.callbackBase = ''">
+                 @closed="oauthForm.clientId = ''; oauthForm.clientSecret = ''; oauthForm.switch = 1">
         <div class="dialog-content">
           <el-input type="text" :placeholder="$t('clientId')" v-model="oauthForm.clientId"/>
           <el-input type="text" style="margin-top: 15px" :placeholder="$t('clientSecret')" v-model="oauthForm.clientSecret"/>
-          <el-input type="text" style="margin-top: 15px" :placeholder="$t('callbackBase')" v-model="oauthForm.callbackBase">
-            <template #append>/login/{{ oauthForm.key }}</template>
-          </el-input>
-          <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-            <el-button type="primary" @click="saveOauth">{{ $t('save') }}</el-button>
-          </div>
         </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-switch v-model="oauthForm.switch" :active-value="0" :inactive-value="1" :active-text="$t('enable')"
+                       :inactive-text="$t('disable')"/>
+            <el-button type="primary" :loading="settingLoading" @click="saveOauth">{{ $t('save') }}</el-button>
+          </div>
+        </template>
       </el-dialog>
       <el-dialog
           v-model="showSetBackground"
@@ -919,7 +920,6 @@ const turnstileForm = reactive({
 const oauthPlatforms = [
   { key: 'linuxdo', label: 'LinuxDo' },
   { key: 'github', label: 'GitHub' },
-  { key: 'gitlab', label: 'GitLab' },
   { key: 'google', label: 'Google' },
 ]
 const oauthSettingShow = ref(false)
@@ -928,7 +928,7 @@ const oauthForm = reactive({
   label: '',
   clientId: '',
   clientSecret: '',
-  callbackBase: '',
+  switch: 1,
 })
 
 const s3 = reactive({
@@ -1393,9 +1393,7 @@ function openOauthSetting(p) {
   oauthForm.label = p.label
   oauthForm.clientId = setting.value[p.key + 'ClientId'] || ''
   oauthForm.clientSecret = setting.value[p.key + 'ClientSecret'] || ''
-  const suffix = '/login/' + p.key
-  const fullUrl = setting.value[p.key + 'CallbackUrl'] || ''
-  oauthForm.callbackBase = fullUrl.endsWith(suffix) ? fullUrl.slice(0, -suffix.length) : fullUrl
+  oauthForm.switch = setting.value[p.key + 'Switch'] ?? 1
   oauthSettingShow.value = true
 }
 
@@ -1403,9 +1401,8 @@ function saveOauth() {
   const form = {}
   form[oauthForm.key + 'ClientId'] = oauthForm.clientId
   form[oauthForm.key + 'ClientSecret'] = oauthForm.clientSecret
-  form[oauthForm.key + 'CallbackUrl'] = oauthForm.callbackBase + '/login/' + oauthForm.key
+  form[oauthForm.key + 'Switch'] = oauthForm.switch
   editSetting(form)
-  oauthSettingShow.value = false
 }
 
 function saveTurnstileKey() {
@@ -1571,6 +1568,7 @@ function editSetting(settingForm, refreshStatus = true) {
     addS3Show.value = false
     emailPrefixShow.value = false
     aiCodeFilterShow.value = false
+    oauthSettingShow.value = false
   }).catch((e) => {
     loginOpacity.value = setting.value.loginOpacity
     setting.value = {...setting.value, ...JSON.parse(backup)}

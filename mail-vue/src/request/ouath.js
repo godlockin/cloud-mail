@@ -1,19 +1,15 @@
 import http from '@/axios/index.js';
 
-export function oauthLinuxDoLogin(code) {
-    return http.post('/oauth/linuxDo/login',{code})
+export function oauthLinuxDoLogin(code, redirectUri) {
+    return http.post('/oauth/linuxDo/login',{code, redirectUri})
 }
 
-export function oauthGithubLogin(code) {
-    return http.post('/oauth/github/login',{code})
+export function oauthGithubLogin(code, redirectUri) {
+    return http.post('/oauth/github/login',{code, redirectUri})
 }
 
-export function oauthGitlabLogin(code) {
-    return http.post('/oauth/gitlab/login',{code})
-}
-
-export function oauthGoogleLogin(code) {
-    return http.post('/oauth/google/login',{code})
+export function oauthGoogleLogin(code, redirectUri) {
+    return http.post('/oauth/google/login',{code, redirectUri})
 }
 
 export function oauthBindUser(form) {

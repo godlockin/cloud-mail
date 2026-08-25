@@ -18,10 +18,6 @@
 | `ADMIN`                 |  ✅  | 您的管理员邮箱地址（例如 `admin@example.com`）                        |
 | `JWT_SECRET`            |  ✅  | 用于生成和验证 JWT 的随机长字符串                                     |
 | `PROJECT_LINK`          |  ❌  | （可选）是否在登录页显示 GitHub 项目链接（`true` / `false`）          |                           |
-| `LINUXDO_SWITCH`        |  ❌  | LinuxDo OAuth 启用开关（`true` / `false`）                            |                                 |
-| `GITHUB_SWITCH`         |  ❌  | GitHub OAuth 启用开关(`true` / `false`)                               |                               |
-| `GITLAB_SWITCH`         |  ❌  | GitLab OAuth 启用开关(`true` / `false`)                               |                            |
-| `GOOGLE_SWITCH`         |  ❌  | Google OAuth 启用开关(`true` / `false`)                               |
 | `INIT_URL`              |  ❌  | （可选）部署后用于初始化数据库的 Worker URL（格式参考下述手动初始化） |
 
 ---

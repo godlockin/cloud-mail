@@ -922,9 +922,9 @@ const turnstileForm = reactive({
 })
 
 const oauthPlatforms = [
-  { key: 'linuxdo', label: 'LinuxDo', icon: '/image/linuxdo.webp', iconType: 'image' },
-  { key: 'github', label: 'GitHub', icon: 'devicon:github', iconType: 'iconify' },
   { key: 'google', label: 'Google', icon: 'devicon:google', iconType: 'iconify' },
+  { key: 'github', label: 'GitHub', icon: 'codicon:github-inverted', iconType: 'iconify' },
+  { key: 'linuxdo', label: 'LinuxDo', icon: '/image/linuxdo.webp', iconType: 'image' },
 ]
 const oauthSettingShow = ref(false)
 const oauthForm = reactive({

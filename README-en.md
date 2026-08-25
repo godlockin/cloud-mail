@@ -65,8 +65,6 @@ With only one domain, you can create multiple different email addresses, similar
 
 - **🤖 CAPTCHA**: Integrated with Turnstile CAPTCHA to prevent automated registration.
 
-- **🔑 OAuth2 Login**: Support LinuxDo / GitHub / Google third-party login.
-
 - **📜 More Features**: Under development...
 
 ## Tech Stack

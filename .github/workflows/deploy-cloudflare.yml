@@ -3,10 +3,6 @@ name: 🚀 Deploy to Cloudflare Workers
 on:
   push:
     branches: [ main ]
-    paths:
-      - "mail-worker/**"
-      - "mail-vue/**"
-      - ".github/workflows/deploy-cloudflare.yml"
   workflow_dispatch:
 
 jobs:

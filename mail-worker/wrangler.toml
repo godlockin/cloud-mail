@@ -16,6 +16,10 @@ database_id = "D1_DATABASE_ID"
 binding = "kv"
 id = "KV_NAMESPACE_ID"
 
+[[r2_buckets]]
+binding = "r2"
+bucket_name = "R2_BUCKET_NAME"
+
 [assets]
 binding = "assets"
 directory = "./dist"

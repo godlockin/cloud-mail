@@ -32,9 +32,9 @@ const settingService = {
 		let domainList = c.env.domain;
 		if (typeof domainList === 'string') {
 			try {
-				domainList = JSON.parse(domainList)
-			} catch (error) {
-				throw new BizError(t('notJsonDomain'));
+				domainList = JSON.parse(domainList);
+			} catch (e) {
+				domainList = [domainList];
 			}
 		}
 		domainList = domainList.map(item => '@' + item);

@@ -1,24 +1,31 @@
-import app from './hono/webs';
-import { email } from './email/email';
-import userService from './service/user-service';
-import verifyRecordService from './service/verify-record-service';
 export default {
-	 async fetch(req, env, ctx) {
-		const url = new URL(req.url)
+	async fetch(req, env, ctx) {
+		try {
+			const url = new URL(req.url);
 
+			if (url.pathname.startsWith('/api/')) {
+				url.pathname = url.pathname.replace('/api', '');
+				req = new Request(url.toString(), req);
+				const { default: app } = await import('./hono/webs');
+				return await app.fetch(req, env, ctx);
+			}
 
-		if (url.pathname.startsWith('/api/')) {
-			url.pathname = url.pathname.replace('/api', '')
-			req = new Request(url.toString(), req)
-			return app.fetch(req, env, ctx);
+			return await env.assets.fetch(req);
+		} catch (err) {
+			return new Response(`Worker Runtime Error:\nMessage: ${err.message}\nStack:\n${err.stack}`, {
+				status: 500,
+				headers: { 'content-type': 'text/plain; charset=utf-8' }
+			});
 		}
-
-
-		return env.assets.fetch(req);
 	},
-	email: email,
+	async email(message, env, ctx) {
+		const { email } = await import('./email/email');
+		return await email(message, env, ctx);
+	},
 	async scheduled(c, env, ctx) {
-		await verifyRecordService.clearRecord({env})
-		await userService.resetDaySendCount({ env })
+		const { default: verifyRecordService } = await import('./service/verify-record-service');
+		const { default: userService } = await import('./service/user-service');
+		await verifyRecordService.clearRecord({ env });
+		await userService.resetDaySendCount({ env });
 	},
 };

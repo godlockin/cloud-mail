@@ -24,3 +24,7 @@ mail-vue/node_modules
 mail-vue/dist
 .wrangler
 .venv
+.env
+.env.*
+mail-worker/.env
+mail-worker/.env.*

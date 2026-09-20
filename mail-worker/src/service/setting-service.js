@@ -21,7 +21,14 @@ const settingService = {
 	},
 
 	async query(c) {
-		const setting = await c.env.kv.get(KvConst.SETTING, { type: 'json' });
+		let settingRow = await c.env.kv.get(KvConst.SETTING, { type: 'json' });
+		if (!settingRow) {
+			settingRow = await orm(c).select().from(setting).get();
+			if (settingRow) {
+				settingRow.resendTokens = JSON.parse(settingRow.resendTokens || '{}');
+				await c.env.kv.put(KvConst.SETTING, JSON.stringify(settingRow));
+			}
+		}
 		let domainList = c.env.domain;
 		if (typeof domainList === 'string') {
 			try {
@@ -31,8 +38,10 @@ const settingService = {
 			}
 		}
 		domainList = domainList.map(item => '@' + item);
-		setting.domainList = domainList;
-		return setting;
+		if (settingRow) {
+			settingRow.domainList = domainList;
+		}
+		return settingRow || {};
 	},
 
 	async get(c) {

@@ -24,6 +24,7 @@ import account from "../entity/account";
 import { att } from '../entity/att';
 import telegramService from './telegram-service';
 import webhookService from './webhook-service';
+import forwardMime from '../utils/forward-mime';
 
 const emailService = {
 
@@ -510,14 +511,14 @@ const emailService = {
 	},
 
 	// 站内发送：普通发送共用一条发件记录，分开发送则每人一条，再写入站内收件箱。
-	async *sendInternal(c, { separate, useCloudflareEmail, resendToken, sendParams, saveParams }) {
+	async *sendInternal(c, { separate, sendParams, saveParams }) {
 		const recipientGroups = separate
 			? sendParams.receiveEmail.map(address => [address])
 			: [sendParams.receiveEmail];
 		for (const receiveEmail of recipientGroups) {
 			const emailResult = await this.saveSentEmail(c, { ...saveParams, receiveEmail });
 			const emailRowList = await this.HandleOnSiteEmail(c, receiveEmail, emailResult, emailResult.attList);
-			await this.forwardOnSiteEmail(c, emailRowList, { useCloudflareEmail, resendToken, sendParams: { ...sendParams, receiveEmail } });
+			await this.forwardOnSiteEmail(c, emailRowList, { sendParams: { ...sendParams, receiveEmail } });
 			yield { emails: [emailResult] };
 		}
 	},
@@ -961,7 +962,7 @@ const emailService = {
 	},
 
 	//站内邮件不经过 email 事件，在这里按转发规则推送
-	async forwardOnSiteEmail(c, emailRowList, { useCloudflareEmail, resendToken, sendParams }) {
+	async forwardOnSiteEmail(c, emailRowList, { sendParams }) {
 
 		const { tgBotStatus, tgChatId, forwardStatus, forwardEmail, webhookStatus, webhookUrl, webhookRetry, webhookSecret, ruleEmail, ruleType } = await settingService.query(c);
 
@@ -984,23 +985,21 @@ const emailService = {
 
 		}
 
-		//转发到其他邮箱，站内邮件没有可 forward 的原始邮件，通过发件渠道重新发送
+		//转发到其他邮箱。发件人用站内实际发件人，信头收件人保留原收件人，信封送到已验证地址。
 		if (forwardStatus === settingConst.forwardStatus.OPEN && forwardEmail && emailRowList.length > 0) {
 
-			if (!useCloudflareEmail && !resendToken) {
-				console.warn(`站内邮件转发到其他邮箱需要 send_email 绑定或 ${sendParams.accountEmail} 所属域名的 Resend token，已跳过`);
-				return;
-			}
+			const addresses = forwardEmail.split(',').map(address => address.trim()).filter(Boolean);
+			const params = {
+				...sendParams,
+				attachments: await this.toCloudflareAttachments(sendParams.attachments || []),
+				receiveEmail: emailRowList.map(row => ({ address: row.toEmail, name: row.toName || '' })).filter(item => item.address)
+			};
 
-			await Promise.all(forwardEmail.split(',').map(async address => {
-
-				const params = { ...sendParams, receiveEmail: [address] };
+			await Promise.all(addresses.map(async address => {
 
 				try {
-					const result = useCloudflareEmail
-						? await this.sendByCloudflareEmail(c, params)
-						: await this.sendByResend(resendToken, params);
-					if (result.error) {
+					const result = await forwardMime.send(c.env.forward, params, address);
+					if (result?.error) {
 						console.error(`转发邮箱 ${address} 失败：`, result.error);
 					}
 				} catch (e) {
